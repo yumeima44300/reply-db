@@ -381,6 +381,13 @@ function loadLocal() {
   try { return JSON.parse(localStorage.getItem('replydb')); } catch(e) { return null; }
 }
 
+// ── Helpers: Firebase array/object conversion ─
+function toArray(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  return Object.values(val);
+}
+
 // ── Init ──────────────────────────────────────
 function init() {
   if (FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey) {
@@ -396,8 +403,17 @@ function init() {
         fireRef = fireDb.ref('replydb');
         fireRef.on('value', snap => {
           const data = snap.val();
-          db = (data && data.tags) ? data : JSON.parse(JSON.stringify(DEFAULT_DATA));
-          if (!data) saveData();
+          if (data) {
+            // Firebase may return objects instead of arrays — convert both
+            db = {
+              tags:     toArray(data.tags),
+              entries:  toArray(data.entries),
+              settings: data.settings || JSON.parse(JSON.stringify(DEFAULT_DATA.settings))
+            };
+          } else {
+            db = JSON.parse(JSON.stringify(DEFAULT_DATA));
+            saveData();
+          }
           applySettings(); render();
         });
       };
@@ -406,8 +422,16 @@ function init() {
     document.head.appendChild(s1);
   } else {
     // Local mode
-    db = loadLocal() || JSON.parse(JSON.stringify(DEFAULT_DATA));
-    if (!db.settings) db.settings = DEFAULT_DATA.settings;
+    const raw = loadLocal();
+    if (raw) {
+      db = {
+        tags:     toArray(raw.tags),
+        entries:  toArray(raw.entries),
+        settings: raw.settings || JSON.parse(JSON.stringify(DEFAULT_DATA.settings))
+      };
+    } else {
+      db = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    }
     applySettings();
     render();
   }
@@ -616,12 +640,12 @@ function addTag() {
   db.tags.push({ id: 't' + Date.now(), name, color: selectedColor });
   saveData(); input.value = '';
   selectedColor = TAG_COLORS[db.tags.length % TAG_COLORS.length];
-  renderTagManager(); renderPalette();
+  renderTagManager(); renderPalette(); render();
 }
 function deleteTag(id) {
   if (db.entries.some(e => e.tagId === id) && !confirm('此分類下還有回覆範本，刪除後這些範本的分類將遺失，確定嗎？')) return;
   db.tags = db.tags.filter(t => t.id !== id);
-  saveData(); renderTagManager();
+  saveData(); renderTagManager(); render();
 }
 
 // ── Close on overlay click ────────────────────
