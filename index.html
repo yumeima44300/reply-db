@@ -159,6 +159,70 @@ mark { background: #fef08a; border-radius: 2px; padding: 0 1px; }
 
 /* Sync badge */
 .sync-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,.2); color: white; opacity: .8; margin-left: 8px; }
+
+/* ── Mobile ────────────────────────────────── */
+@media (max-width: 640px) {
+  header { padding: 12px 16px; }
+  #headerTitle { font-size: 15px; max-width: 200px; }
+
+  .layout {
+    flex-direction: column;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  /* 側邊欄變成橫向捲動的標籤列 */
+  .sidebar { width: 100%; }
+  .sidebar h3 { display: none; }
+  .tag-list {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tag-list::-webkit-scrollbar { display: none; }
+  .tag-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .tag-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .tag-btn.active .tag-count { background: rgba(255,255,255,.3); color: white; }
+  .tag-count { display: none; }
+  .tag-dot { display: none; }
+  .manage-tags-btn { margin-top: 8px; }
+
+  /* 搜尋列 */
+  .toolbar { flex-wrap: wrap; }
+  .search-wrap { width: 100%; }
+  .btn-primary { width: 100%; text-align: center; }
+
+  /* 卡片 */
+  .card { padding: 14px; }
+  .card-title { font-size: 14px; }
+  .card-body { font-size: 13px; }
+  .card-footer { flex-wrap: wrap; }
+  .btn-copy { flex: 1; text-align: center; }
+
+  /* Modal 全螢幕 */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal {
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px;
+    max-height: 85vh;
+    width: 100%;
+    max-width: 100%;
+  }
+}
 </style>
 </head>
 <body>
