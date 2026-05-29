@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>快速回覆資料庫</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-light: #eef2ff;
+  --success: #10b981;
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --border: #e5e7eb;
+  --text: #111827;
+  --muted: #6b7280;
+  --bg: #f9fafb;
+  --card: #ffffff;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* Header */
+header {
+  background: var(--primary);
+  color: white;
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  transition: background .3s;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+#headerTitle {
+  font-size: 18px; font-weight: 700; letter-spacing: .3px;
+  background: none; border: none; color: white;
+  outline: none; cursor: text; padding: 3px 8px; border-radius: 6px;
+  transition: background .15s; min-width: 60px; max-width: 340px;
+}
+#headerTitle:hover { background: rgba(255,255,255,.15); }
+#headerTitle:focus { background: rgba(255,255,255,.2); }
+.header-color-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.6);
+  cursor: pointer; overflow: hidden; position: relative;
+  flex-shrink: 0; transition: border-color .15s, transform .15s;
+  background: rgba(255,255,255,.25);
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.header-color-btn:hover { border-color: white; transform: scale(1.1); }
+.header-color-btn input[type=color] {
+  position: absolute; inset: -6px; opacity: 0; cursor: pointer;
+  width: calc(100% + 12px); height: calc(100% + 12px);
+}
+.header-sub { font-size: 13px; opacity: .7; }
+
+/* Layout */
+.layout { display: flex; max-width: 1100px; margin: 0 auto; padding: 20px 16px; gap: 20px; }
+
+/* Sidebar */
+.sidebar { width: 180px; flex-shrink: 0; }
+.sidebar h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; padding-left: 4px; }
+.tag-list { display: flex; flex-direction: column; gap: 4px; }
+.tag-btn {
+  padding: 7px 12px; border-radius: 8px; border: none;
+  background: none; cursor: pointer; text-align: left; font-size: 14px;
+  color: var(--text); transition: background .15s;
+  display: flex; align-items: center; gap: 8px;
+}
+.tag-btn:hover { background: var(--primary-light); }
+.tag-btn.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+.tag-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tag-count { margin-left: auto; font-size: 11px; background: var(--border); color: var(--muted); border-radius: 10px; padding: 1px 6px; }
+.tag-btn.active .tag-count { background: var(--primary); color: white; }
+.manage-tags-btn {
+  margin-top: 12px; width: 100%; padding: 7px 12px;
+  border: 1px dashed var(--border); border-radius: 8px;
+  background: none; cursor: pointer; font-size: 13px; color: var(--muted); transition: all .15s;
+}
+.manage-tags-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+/* Main */
+.main { flex: 1; min-width: 0; }
+.toolbar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; }
+.search-wrap { flex: 1; position: relative; }
+.search-wrap input {
+  width: 100%; padding: 9px 14px 9px 38px;
+  border: 1px solid var(--border); border-radius: 10px;
+  font-size: 14px; background: white; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
+.btn-primary { padding: 9px 18px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .15s; }
+.btn-primary:hover { background: var(--primary-hover); }
+.results-meta { font-size: 13px; color: var(--muted); margin-bottom: 12px; padding-left: 2px; }
+
+/* Cards */
+.cards { display: flex; flex-direction: column; gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; transition: box-shadow .15s, border-color .15s; }
+.card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); border-color: #d1d5db; }
+.card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.card-title { font-size: 15px; font-weight: 600; flex: 1; line-height: 1.4; }
+.card-tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; color: white; font-weight: 500; flex-shrink: 0; }
+.card-body { font-size: 14px; color: #374151; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+.card-footer { margin-top: 12px; display: flex; gap: 8px; align-items: center; }
+.btn-copy { padding: 6px 16px; background: var(--success); color: white; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; }
+.btn-copy:hover { background: #059669; }
+.btn-copy.copied { background: #6b7280; }
+.btn-edit, .btn-delete { padding: 6px 12px; border-radius: 7px; font-size: 13px; cursor: pointer; transition: background .15s; border: 1px solid var(--border); background: white; color: var(--muted); }
+.btn-edit:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+.btn-delete:hover { background: var(--danger-light); color: var(--danger); border-color: var(--danger); }
+
+/* Toast */
+.copied-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1f2937; color: white; padding: 10px 22px; border-radius: 30px; font-size: 14px; font-weight: 500; opacity: 0; pointer-events: none; transition: all .25s; z-index: 999; }
+.copied-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 16px; padding: 28px; width: 100%; max-width: 520px; box-shadow: 0 20px 60px rgba(0,0,0,.2); max-height: 90vh; overflow-y: auto; }
+.modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; transition: border-color .15s, box-shadow .15s; resize: vertical; }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+.form-group textarea { min-height: 140px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.btn-cancel { padding: 9px 18px; background: none; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; cursor: pointer; color: var(--muted); transition: background .15s; }
+.btn-cancel:hover { background: var(--bg); }
+
+/* Tag Manager */
+.tag-manager-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.tag-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; }
+.tag-color-swatch { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.tag-item-name { flex: 1; font-size: 14px; }
+.tag-item-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 4px; transition: background .15s; }
+.tag-item-del:hover { background: var(--danger-light); color: var(--danger); }
+.add-tag-row { display: flex; gap: 8px; align-items: center; }
+.add-tag-row input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; }
+.add-tag-row input:focus { border-color: var(--primary); }
+
+/* Color palette */
+.color-palette { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 12px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); align-items: center; }
+.color-palette label { font-size: 12px; color: var(--muted); width: 100%; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.cp-swatch { width: 26px; height: 26px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: transform .15s, border-color .15s; outline: none; flex-shrink: 0; }
+.cp-swatch:hover { transform: scale(1.15); }
+.cp-swatch.selected { border-color: #1f2937; transform: scale(1.1); }
+.cp-custom { width: 26px; height: 26px; border-radius: 50%; border: 2px dashed #9ca3af; cursor: pointer; overflow: hidden; position: relative; flex-shrink: 0; transition: border-color .15s; }
+.cp-custom:hover { border-color: var(--primary); }
+.cp-custom input[type=color] { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); opacity: 0; cursor: pointer; border: none; padding: 0; }
+.cp-custom-dot { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+
+/* Empty */
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty .icon { font-size: 48px; margin-bottom: 12px; }
+.empty p { font-size: 15px; }
+mark { background: #fef08a; border-radius: 2px; padding: 0 1px; }
+
+/* Sync badge */
+.sync-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,.2); color: white; opacity: .8; margin-left: 8px; }
+</style>
+</head>
+<body>
+
+<header id="mainHeader">
+  <div class="header-left">
+    <span class="header-color-btn" title="更換顏色">🎨
+      <input type="color" id="headerColorPicker" value="#4f46e5"
+             oninput="updateHeaderColor(this.value)" onchange="saveSettings()">
+    </span>
+    <input id="headerTitle" type="text" value="📋 補習班快速回覆資料庫"
+           maxlength="40" title="點擊編輯名稱" onchange="saveSettings()" onblur="saveSettings()">
+  </div>
+  <span class="header-sub">點擊複製 → 直接貼到 Facebook</span>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <h3>分類</h3>
+    <div class="tag-list" id="tagList"></div>
+    <button class="manage-tags-btn" onclick="openTagManager()">⚙ 管理分類</button>
+  </aside>
+  <main class="main">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="搜尋關鍵字，例如：教材、時間、費用…" oninput="render()">
+      </div>
+      <button class="btn-primary" onclick="openAdd()">＋ 新增回覆</button>
+    </div>
+    <div class="results-meta" id="resultsMeta"></div>
+    <div class="cards" id="cards"></div>
+  </main>
+</div>
+
+<div class="copied-toast" id="toast">✅ 已複製到剪貼簿！</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h2 id="modalTitle">新增回覆範本</h2>
+    <div class="form-group">
+      <label>標題（方便辨識）</label>
+      <input type="text" id="fTitle" placeholder="例如：學費說明">
+    </div>
+    <div class="form-group">
+      <label>分類</label>
+      <select id="fTag"></select>
+    </div>
+    <div class="form-group">
+      <label>回覆內容</label>
+      <textarea id="fContent" placeholder="輸入要複製貼上的完整回覆文字…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-primary" onclick="saveEntry()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tag Manager Modal -->
+<div class="modal-overlay" id="tagModal">
+  <div class="modal">
+    <h2>管理分類標籤</h2>
+    <div class="tag-manager-list" id="tagManagerList"></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
+    <div class="color-palette" id="colorPalette">
+      <label>新分類顏色</label>
+    </div>
+    <div class="add-tag-row">
+      <input type="text" id="newTagInput" placeholder="輸入新分類名稱" maxlength="20"
+             onkeydown="if(event.key==='Enter') addTag()">
+      <button class="btn-primary" onclick="addTag()">新增</button>
+    </div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-cancel" onclick="closeTagManager()">關閉</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  Firebase 設定（選填）
+//  沒填就用本地模式，填了就自動雲端同步
+// ══════════════════════════════════════════════
+const FIREBASE_CONFIG = null;
+// 填好後把上面那行換成：
+// const FIREBASE_CONFIG = {
+//   apiKey: "...",
+//   authDomain: "...",
+//   databaseURL: "...",
+//   projectId: "...",
+//   storageBucket: "...",
+//   messagingSenderId: "...",
+//   appId: "..."
+// };
+// ══════════════════════════════════════════════
+
+const TAG_COLORS = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6','#ef4444','#14b8a6'];
+
+const DEFAULT_DATA = {
+  settings: { headerTitle: '📋 補習班快速回覆資料庫', headerColor: '#4f46e5' },
+  tags: [
+    { id: 't1', name: '教材類',    color: '#6366f1' },
+    { id: 't2', name: '上課時間',  color: '#0ea5e9' },
+    { id: 't3', name: '正音班課程', color: '#10b981' },
+    { id: 't4', name: '費用相關',  color: '#f59e0b' },
+    { id: 't5', name: '報名資訊',  color: '#ec4899' },
+  ],
+  entries: [
+    { id: 'e1', tagId: 't1', title: '教材說明',
+      content: '您好！我們的教材皆由師資團隊自行編寫，涵蓋注音、閱讀、寫作三大面向，每學期一套，費用已含在學費內，不需另外購買。如需試閱範本，歡迎來電或親洽詢問 😊' },
+    { id: 'e2', tagId: 't2', title: '上課時間表',
+      content: '本班上課時間如下：\n・週一至週五：下午 4:00 – 6:00\n・週六：上午 9:00 – 11:30\n・週日：休息\n\n暑期班另有開設全天課程，歡迎詢問！' },
+    { id: 'e3', tagId: 't2', title: '試聽課說明',
+      content: '您好！我們有提供免費試聽課程，歡迎帶孩子來體驗看看 😊\n\n試聽方式：來電或私訊預約時間即可，不需要事先繳費。\n試聽完再決定是否報名，完全沒有壓力！\n\n預約電話：0912-345-678' },
+    { id: 'e4', tagId: 't3', title: '正音班說明',
+      content: '正音班主要針對注音符號不熟練、發音不標準的學生，採小班制（每班最多 8 人），由老師個別糾音。\n\n建議年齡：國小一至二年級\n課程時長：每堂 50 分鐘，每週 2 堂\n\n歡迎來電詢問目前開課時段！' },
+    { id: 'e5', tagId: 't3', title: '正音班適合對象',
+      content: '正音班適合以下情況的孩子：\n・注音符號學了但還不熟練\n・說話發音不清楚、容易被誤解\n・拼音速度慢，影響閱讀與寫作\n\n課程以遊戲和互動方式進行，孩子不容易感到壓力 😊' },
+    { id: 'e6', tagId: 't4', title: '學費說明',
+      content: '您好！本班費用如下：\n\n・正規班：每月 $3,000（週一至週五）\n・週末班：每月 $1,500（週六上午）\n・正音班：每月 $2,200\n\n費用包含教材及講義，每月月初繳交。\n如有需要可申請分期，歡迎來電討論 🙂' },
+    { id: 'e7', tagId: 't4', title: '有沒有優惠',
+      content: '您好！目前優惠方案如下：\n\n・手足同時就讀：第二位享 9 折優惠\n・暑期提前報名（5月底前）：享早鳥優惠\n・介紹新同學：雙方各折抵一週學費\n\n詳細內容歡迎來電或私訊詢問 😊' },
+    { id: 'e8', tagId: 't5', title: '報名方式',
+      content: '報名流程：\n1️⃣ 私訊或來電預約試聽\n2️⃣ 免費試讀一堂課\n3️⃣ 確認後填寫報名表\n4️⃣ 繳費完成入班\n\n聯絡電話：0912-345-678\n上班時間：週一至週六 下午 2:00 – 8:00' },
+    { id: 'e9', tagId: 't5', title: '目前還有名額嗎',
+      content: '您好！目前各班名額如下：\n\n・正規班（週一至週五）：尚有 2 個名額\n・週末班（週六）：額滿，可登記候補\n・正音班：尚有名額\n\n建議盡早預約試聽，以免向隅！有任何問題歡迎繼續詢問 😊' },
+  ]
+};
+
+// ── State ─────────────────────────────────────
+let db = null;
+let activeTag = 'all';
+let editingId = null;
+let selectedColor = TAG_COLORS[0];
+let fireDb = null, fireRef = null;
+
+// ── Storage ───────────────────────────────────
+function saveData() {
+  if (fireRef) {
+    fireRef.set(db);
+  } else {
+    localStorage.setItem('replydb', JSON.stringify(db));
+  }
+}
+function loadLocal() {
+  try { return JSON.parse(localStorage.getItem('replydb')); } catch(e) { return null; }
+}
+
+// ── Init ──────────────────────────────────────
+function init() {
+  if (FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey) {
+    // Load Firebase dynamically
+    const s1 = document.createElement('script');
+    s1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+    s1.onload = () => {
+      const s2 = document.createElement('script');
+      s2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js';
+      s2.onload = () => {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        fireDb = firebase.database();
+        fireRef = fireDb.ref('replydb');
+        fireRef.on('value', snap => {
+          const data = snap.val();
+          db = (data && data.tags) ? data : JSON.parse(JSON.stringify(DEFAULT_DATA));
+          if (!data) saveData();
+          applySettings(); render();
+        });
+      };
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s1);
+  } else {
+    // Local mode
+    db = loadLocal() || JSON.parse(JSON.stringify(DEFAULT_DATA));
+    if (!db.settings) db.settings = DEFAULT_DATA.settings;
+    applySettings();
+    render();
+  }
+}
+
+// ── Settings ──────────────────────────────────
+function applySettings() {
+  if (!db || !db.settings) return;
+  const s = db.settings;
+  if (s.headerTitle) document.getElementById('headerTitle').value = s.headerTitle;
+  if (s.headerColor) {
+    const h = document.getElementById('mainHeader');
+    h.style.background = s.headerColor;
+    h.style.boxShadow = '0 2px 8px ' + s.headerColor + '66';
+    document.getElementById('headerColorPicker').value = s.headerColor;
+  }
+}
+function updateHeaderColor(color) {
+  const h = document.getElementById('mainHeader');
+  h.style.background = color;
+  h.style.boxShadow = '0 2px 8px ' + color + '66';
+}
+function saveSettings() {
+  if (!db) return;
+  if (!db.settings) db.settings = {};
+  db.settings.headerTitle = document.getElementById('headerTitle').value;
+  db.settings.headerColor = document.getElementById('headerColorPicker').value;
+  saveData();
+}
+
+// ── Helpers ───────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function highlight(text, q) {
+  if (!q) return escHtml(text);
+  const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')','gi');
+  return escHtml(text).replace(re,'<mark>$1</mark>');
+}
+function getTagById(id) { return db.tags.find(t => t.id === id); }
+
+// ── Render ────────────────────────────────────
+function render() {
+  if (!db) return;
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const filtered = db.entries.filter(e => {
+    const matchTag = activeTag === 'all' || e.tagId === activeTag;
+    const matchQ = !q || e.title.toLowerCase().includes(q) || e.content.toLowerCase().includes(q);
+    return matchTag && matchQ;
+  });
+
+  // Sidebar
+  const tagListEl = document.getElementById('tagList');
+  tagListEl.innerHTML =
+    `<button class="tag-btn ${activeTag==='all'?'active':''}" onclick="setTag('all')">
+      <span class="tag-dot" style="background:#9ca3af"></span>全部
+      <span class="tag-count">${db.entries.length}</span>
+    </button>` +
+    db.tags.map(t => {
+      const cnt = db.entries.filter(e => e.tagId === t.id).length;
+      return `<button class="tag-btn ${activeTag===t.id?'active':''}" onclick="setTag('${t.id}')">
+        <span class="tag-dot" style="background:${t.color}"></span>${escHtml(t.name)}
+        <span class="tag-count">${cnt}</span>
+      </button>`;
+    }).join('');
+
+  // Meta
+  document.getElementById('resultsMeta').textContent =
+    q ? `搜尋「${q}」：找到 ${filtered.length} 筆` :
+    activeTag === 'all' ? `共 ${filtered.length} 筆回覆範本` : `${filtered.length} 筆`;
+
+  // Cards
+  const cardsEl = document.getElementById('cards');
+  if (!filtered.length) {
+    cardsEl.innerHTML = `<div class="empty"><div class="icon">🗂️</div><p>${q?'找不到符合的內容，試試其他關鍵字':'這個分類還沒有內容，點右上角新增！'}</p></div>`;
+    return;
+  }
+  cardsEl.innerHTML = filtered.map(e => {
+    const tag = getTagById(e.tagId);
+    const badge = tag ? `<span class="card-tag" style="background:${tag.color}">${escHtml(tag.name)}</span>` : '';
+    return `<div class="card">
+      <div class="card-header">
+        <div class="card-title">${highlight(e.title, q)}</div>${badge}
+      </div>
+      <div class="card-body">${highlight(e.content, q)}</div>
+      <div class="card-footer">
+        <button class="btn-copy" id="copy-${e.id}" onclick="copyEntry('${e.id}')">📋 複製</button>
+        <button class="btn-edit" onclick="openEdit('${e.id}')">✏️ 編輯</button>
+        <button class="btn-delete" onclick="deleteEntry('${e.id}')">🗑 刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setTag(id) { activeTag = id; render(); }
+
+// ── Copy ──────────────────────────────────────
+function copyEntry(id) {
+  const e = db.entries.find(e => e.id === id);
+  if (!e) return;
+  navigator.clipboard.writeText(e.content).then(() => {
+    const btn = document.getElementById('copy-' + id);
+    const orig = btn.textContent;
+    btn.textContent = '✅ 已複製'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1800);
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  });
+}
+
+// ── Add / Edit ────────────────────────────────
+function openAdd() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = '新增回覆範本';
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fContent').value = '';
+  populateTagSelect();
+  document.getElementById('editModal').classList.add('open');
+}
+function openEdit(id) {
+  const e = db.entries.find(e => e.id === id);
+  if (!e) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = '編輯回覆範本';
+  document.getElementById('fTitle').value = e.title;
+  document.getElementById('fContent').value = e.content;
+  populateTagSelect(e.tagId);
+  document.getElementById('editModal').classList.add('open');
+}
+function populateTagSelect(selected) {
+  document.getElementById('fTag').innerHTML = db.tags.map(t =>
+    `<option value="${t.id}" ${t.id===selected?'selected':''}>${escHtml(t.name)}</option>`
+  ).join('');
+}
+function closeModal() { document.getElementById('editModal').classList.remove('open'); }
+function saveEntry() {
+  const title = document.getElementById('fTitle').value.trim();
+  const content = document.getElementById('fContent').value.trim();
+  const tagId = document.getElementById('fTag').value;
+  if (!title || !content) { alert('請填寫標題和內容'); return; }
+  if (editingId) {
+    const e = db.entries.find(e => e.id === editingId);
+    e.title = title; e.content = content; e.tagId = tagId;
+  } else {
+    db.entries.push({ id: 'e' + Date.now(), tagId, title, content });
+  }
+  saveData(); closeModal(); render();
+}
+function deleteEntry(id) {
+  if (!confirm('確定要刪除這筆回覆嗎？')) return;
+  db.entries = db.entries.filter(e => e.id !== id);
+  saveData(); render();
+}
+
+// ── Tag Manager ───────────────────────────────
+function openTagManager() {
+  selectedColor = TAG_COLORS[0];
+  renderTagManager(); renderPalette();
+  document.getElementById('tagModal').classList.add('open');
+}
+function closeTagManager() {
+  document.getElementById('tagModal').classList.remove('open'); render();
+}
+function renderTagManager() {
+  document.getElementById('tagManagerList').innerHTML = db.tags.map(t =>
+    `<div class="tag-item">
+      <span class="tag-color-swatch" style="background:${t.color};cursor:pointer"
+            title="點擊更改顏色" onclick="pickColorForTag('${t.id}',this)"></span>
+      <span class="tag-item-name">${escHtml(t.name)}</span>
+      <button class="tag-item-del" onclick="deleteTag('${t.id}')">✕</button>
+    </div>`
+  ).join('') || '<p style="color:var(--muted);font-size:13px;padding:4px">尚未建立任何分類</p>';
+}
+function renderPalette() {
+  document.getElementById('colorPalette').innerHTML = '<label>新分類顏色</label>' +
+    TAG_COLORS.map(c =>
+      `<button class="cp-swatch ${c===selectedColor?'selected':''}" style="background:${c}"
+               onclick="selectColor('${c}')"></button>`
+    ).join('') +
+    `<span class="cp-custom" title="自訂顏色">
+      <input type="color" id="customColorInput" value="${selectedColor}" oninput="selectColor(this.value)">
+      <span class="cp-custom-dot" style="background:${!TAG_COLORS.includes(selectedColor)?selectedColor:'transparent'}">
+        ${TAG_COLORS.includes(selectedColor)?'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#9ca3af">＋</span>':''}
+      </span>
+    </span>`;
+}
+function selectColor(c) { selectedColor = c; renderPalette(); }
+function pickColorForTag(id, el) {
+  const inp = document.createElement('input');
+  inp.type = 'color';
+  const tag = db.tags.find(t => t.id === id);
+  if (!tag) return;
+  inp.value = tag.color;
+  inp.style.cssText = 'position:fixed;opacity:0;width:0;height:0';
+  document.body.appendChild(inp);
+  inp.click();
+  inp.addEventListener('input', () => { tag.color = inp.value; el.style.background = inp.value; });
+  inp.addEventListener('change', () => { saveData(); document.body.removeChild(inp); });
+}
+function addTag() {
+  const input = document.getElementById('newTagInput');
+  const name = input.value.trim();
+  if (!name) return;
+  if (db.tags.find(t => t.name === name)) { alert('已有同名分類'); return; }
+  db.tags.push({ id: 't' + Date.now(), name, color: selectedColor });
+  saveData(); input.value = '';
+  selectedColor = TAG_COLORS[db.tags.length % TAG_COLORS.length];
+  renderTagManager(); renderPalette();
+}
+function deleteTag(id) {
+  if (db.entries.some(e => e.tagId === id) && !confirm('此分類下還有回覆範本，刪除後這些範本的分類將遺失，確定嗎？')) return;
+  db.tags = db.tags.filter(t => t.id !== id);
+  saveData(); renderTagManager();
+}
+
+// ── Close on overlay click ────────────────────
+document.getElementById('editModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+document.getElementById('tagModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeTagManager(); });
+
+init();
+</script>
+</body>
+</html>
