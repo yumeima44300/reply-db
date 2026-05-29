@@ -525,7 +525,7 @@ function openAdd() {
   document.getElementById('modalTitle').textContent = '新增回覆範本';
   document.getElementById('fTitle').value = '';
   document.getElementById('fContent').value = '';
-  populateTagSelect();
+  populateTagSelect(activeTag !== 'all' ? activeTag : null);
   document.getElementById('editModal').classList.add('open');
 }
 function openEdit(id) {
